@@ -12,22 +12,20 @@ trademarks of Amazon.com, Inc. or its affiliates in the United States andor
 other countries.
 --->
 
-Assuming that you own VPC networks in Google Cloud Platform (GCP) and Amazon Web
+If you own VPC networks in Google Cloud Platform (GCP) and Amazon Web
 Services (AWS), you can use an IPsec VPN tunnel to connect them. Through the
 tunnel, VM instances in one network can send and receive traffic to and from
 instances in the other network by using internal (private) IP addresses.
 
-You can configure dynamic or static routing to define which traffic can traverse
-the VPN tunnel. For dynamic routing, you use the Border Gateway Protocol (BGP)
-to dynamically exchange routes between networks. For static routing, you
-configure rules on both sides of the network to define which traffic is allowed
-on the tunnel.
-
 The following tutorial uses Google Cloud VPN and an AWS Virtual Private Gateway
 (VPG) to establish an IPsec VPN tunnel. You can choose to configure the tunnel
-with dynamic or static routing. Also, replace the samples values with values
-from your environment, such as IP addresses, device IDs, shared secrets, and
-project names.
+with dynamic or static routing. In the tutorial, replace the samples values with
+values from your environment such as IP addresses, device IDs, shared secrets,
+and project names.
+
+For dynamic routing, you use the Border Gateway Protocol (BGP) to dynamically
+exchange routes between networks. For static routing, you have static routes on
+both sides of the network to define which traffic is allowed on the tunnel.
 
 ## Objectives
 Whether you choose the dynamic or static routing configuration, you'll complete
@@ -134,7 +132,7 @@ with a VPG and customer gateway.
 
 1. Go to the [VPC dashboard](www.console.aws.amazon.com/vpc/home) in the AWS
    Management Console.
-1. Select an AWS region. For this tutorial, select the **US East (Ohio)
+1. Select an AWS region. For this tutorial, select the **US East (N. Virginia)
    region**. Later, you'll connect the VPN tunnel to a GCP region close in
    proximity to this AWS region. For more information about selecting a region,
    see [Working with the AWS Management
@@ -225,8 +223,8 @@ BGP sessions with your AWS VPC network.
       connect to your AWS VPC. Select **default**.
     * **Region**  &mdash; The region where you want to create the VPN gateway.
       The GCP side of the VPN tunnel terminates in this region. For this
-      tutorial, select `us-central1` because it's close in proximity to your AWS
-      VPG, which should be in US East (Ohio).
+      tutorial, select `us-east4` because it's close in proximity to your AWS
+      VPG, which should be in US East (N. Virginia).
     * **IP Address** &mdash; Select the [static external IP
       address](/compute/docs/ip-addresses#reservedaddress) that you created
       earlier. The IP address must match the value that your specified for the
@@ -305,7 +303,7 @@ with a VPG and customer gateway.
 
 1. Go to the [VPC dashboard](www.console.aws.amazon.com/vpc/home) in the AWS
    Management Console.
-1. Select an AWS region. For this tutorial, select the **US East (Ohio)
+1. Select an AWS region. For this tutorial, select the **US East (N. Virginia)
    region**. Later, you'll connect the VPN tunnel to a GCP region close in
    proximity to this AWS region. For more information about selecting a region,
    see [Working with the AWS Management
@@ -350,8 +348,8 @@ with a VPG and customer gateway.
     * **VPN Connection name** &mdash; A name for this VPN connection. Enter
       `AWS-to-GCP`.
     * **Routing Type** &mdash; Select **Static** for the routing type.
-        * **IP Prefix** &mdash; Enter `10.128.0.0/20`, which is the default
-          network's subnet IP range in the us-central1 region.
+        * **IP Prefix** &mdash; Enter `10.150.0.0/20`, which is the default
+          network's subnet IP range in the us-east4 region.
 
 VPC creation takes a minute or two to complete. After it's done, the
 management console status is updated, showing your new VPC.
@@ -397,8 +395,8 @@ gateway and specify the destination IP ranges that the tunnels allow.
       connect to your AWS VPC. Select **default**.
     * **Region**  &mdash; The region where you want to create the VPN gateway.
       The GCP side of the VPN tunnel terminates in this region. For this
-      tutorial, select `us-central1` because it's close in proximity to your AWS
-      VPG, which should be in US East (Ohio).
+      tutorial, select `us-east4` because it's close in proximity to your AWS
+      VPG, which should be in US East (N. Virginia).
     * **IP Address** &mdash; Select the [static external IP
       address](/compute/docs/ip-addresses#reservedaddress) that you created
       earlier. The IP address must match the value that your specified for the
@@ -411,7 +409,7 @@ gateway and specify the destination IP ranges that the tunnels allow.
       This value is in the AWS VPN configuration file.
     * **Routing options** &mdash; Select **Static**.
     * **Remote network IP ranges** &mdash; The AWS private subnet `10.0.1.0/24`.
-    * **Local IP ranges** &mdash; The GCP subnet `10.128,0.0/20`.
+    * **Local IP ranges** &mdash; The GCP subnet `10.150.0.0/20`.
 1. Select **Add tunnel** and then repeat the previous steps to add the redundant
    VPN tunnel.
 1. Select **Create** to create the gateway and all tunnels. GCP creates the
@@ -443,7 +441,7 @@ VPC.
 1. For the Type, select **Custom ICMP Rule**. Use the default values `ICMP` and
    `Echo Reply` for the protocol and port range. For this tutorial, you only
    need to allow traffic for a ping test.
-1. For the **Source**, specify the GCP subnet `10.128.0.0/20`, and then select
+1. For the **Source**, specify the GCP subnet `10.150.0.0/20`, and then select
    **Save**.
 
 In GCP, you work with firewall rules to determine which connections are allowed.
@@ -567,44 +565,26 @@ session with AWS.
    the Cloud Router documentation.
 
 ## Testing the IPsec VPN tunnel
-The IPsec tunnel can be tested from the router by using ICMP to ping a host on
-GCP. Be sure to use the `inside interface` on the ASR 1000.
+To test the tunnel, you need two VM instances, one in each VPC network. After
+the VM instances are deployed, log in to one of the instances. Then, use an ICMP
+echo request to ping the other instance by using its internal IP address. If the
+request is successful, the tunnel is ready. If not, check your firewall rules,
+routes, or any logging information to troubleshoot the issue.
 
-    cisco-asr#ping 172.16.100.2 source 10.0.200.1
-    Type escape sequence to abort.
-    Sending 5, 100-byte ICMP Echos to 172.16.100.2, timeout is 2 seconds:
-    Packet sent with a source address of 10.0.200.1
-    !!!!!
-    Success rate is 100 percent (5/5), round-trip min/avg/max = 18/19/20 ms
+To launch a VM instance in AWS, see [Getting Started with Amazon EC2 Linux
+Instances](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EC2_GetStarted.html)
+in the Amazon Elastic Compute Cloud User Guide for Linux Instances. Configure
+the instance details so that it's launched in the `GCP-test` VPC and `AWS-VPC`
+subnet.
 
+To create an instance in GCP, see [Quickstart Using a Linux
+VM](https://cloud.google.com/compute/docs/quickstart-linux) in the Compute
+Engine documentation. Create the networking in any of the us-east4 zones.
 
 ## What's next
+For more information about Cloud VPN and GCP VPC networks, such as the CLI
+commands, view the following documentation:
 
-Please refer to the following documentation for ASR 1000 Platform feature
-configuration guide and datasheet:
-
-* [Security for VPNs with IPsec](http://www.cisco.com/c/en/us/td/docs/ios-xml/ios/sec_conn_vpnips/configuration/xe-3s/sec-sec-for-vpns-w-ipsec-xe-3s-book/sec-cfg-vpn-ipsec.html)
-* [Internet Key Exchange Version 2](http://www.cisco.com/c/en/us/td/docs/ios-xml/ios/sec_conn_ike2vpn/configuration/xe-16/sec-flex-vpn-xe-16-book.html)
-* [IPsec Virtual Tunnel Interface](http://www.cisco.com/c/en/us/td/docs/ios-xml/ios/sec_conn_vpnips/configuration/xe-3s/sec-sec-for-vpns-w-ipsec-xe-3s-book/sec-ipsec-virt-tunnl.html)
-* [BGP Configuration Guide](http://www.cisco.com/c/en/us/td/docs/ios-xml/ios/iproute_bgp/configuration/xe-3s/irg-xe-3s-book.html)
-* [Load Balancing Configuration Guide](http://www.cisco.com/c/en/us/td/docs/ios-xml/ios/ipswitch_cef/configuration/xe-3s/isw-cef-xe-3s-book/isw-cef-load-balancing.html)
-* [ASR 1000 Routers Datasheet](http://www.cisco.com/c/en/us/products/collateral/routers/asr-1000-series-aggregation-services-routers/datasheet-c78-731632.html)
-* [ASR 1000 ESP Datasheet](http://www.cisco.com/c/en/us/products/collateral/routers/asr-1000-series-aggregation-services-routers/datasheet-c78-731640.html)
-* [ASR 1000 Ordering Guide](http://www.cisco.com/c/en/us/products/collateral/routers/asr-1000-series-aggregation-services-routers/guide-c07-731639.html)
-* [IOS-XE NGE Support Product Tech Note](http://www.cisco.com/c/en/us/support/docs/security-vpn/ipsec-negotiation-ike-protocols/116055-technote-ios-crypto.html)
-
-Refer to the following documentation for common error messages and debug commands:
-
-* [IPsec Troubleshooting: Understanding and Using debug Commands](http://www.cisco.com/c/en/us/support/docs/security-vpn/ipsec-negotiation-ike-protocols/5409-ipsec-debug-00.html)
-* [Resolve IP Fragmentation, MTU, MSS, and PMTUD Issues with GRE and IPsec](http://www.cisco.com/c/en/us/support/docs/ip/generic-routing-encapsulation-gre/25885-pmtud-ipfrag.html)
-* [Invalid SPI](http://www.cisco.com/c/en/us/support/docs/security-vpn/ipsec-negotiation-ike-protocols/115801-technote-iosvpn-00.html)
-* [IPsec Anti-Replay Check Failures](http://www.cisco.com/c/en/us/support/docs/ip/internet-key-exchange-ike/116858-problem-replay-00.html)
-* [IKEv2 Selection Rules for Keyrings and Profiles](http://www.cisco.com/c/en/us/support/docs/security-vpn/ipsec-negotiation-ike-protocols/117259-trouble-ios-ike-00.html)
-* [Embedded Packet Capture for IOS-XE ](http://www.cisco.com/c/en/us/support/docs/ios-nx-os-software/ios-embedded-packet-capture/116045-productconfig-epc-00.html)
-
-To learn more about GCP networking, refer to below documents:
-
-* [GCP VPC Networks](https://cloud.google.com/compute/docs/vpc/)
-* [GCP Cloud VPN](https://cloud.google.com/compute/docs/vpn/overview)
-* [GCP advanced VPN](https://cloud.google.com/compute/docs/vpn/advanced)
-* [Troubleshooting VPN on GCP](https://cloud.google.com/compute/docs/vpn/troubleshooting)
+* [GCP Cloud VPN](https://cloud.google.com/vpn/docs/)
+* [GCP VPC Networks](https://cloud.google.com/vpc/docs/)
+* [Troubleshooting Cloud VPN](https://cloud.google.com/vpn/docs/resources/troubleshooting)
